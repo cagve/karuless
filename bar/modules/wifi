@@ -13,15 +13,23 @@ WIFI_LOW_ICON='(WIFI)'
 NO_WIFI_ICON='(WIFI)'
 IP=$(hostname -I | awk '{print $1}')
 WIFI_NAME=$(iwgetid -r)
+VPN=$(ip addr | grep tun)
+VPN_ICON='(VPN)'
+VPN_NAME=$(nmcli con show --active | grep -i vpn | awk -F ' ' '{print $1}')
+
 
 get_wifi()
 {
     if [ -z $WIFI_NAME ]
     then
-        echo $WIFI_FULL_ICON "Not connected";
-    else 
+        echo $WIFI_FULL_ICON "Not connected"
+    elif [ -z $VPN_NAME ]
+    then
         echo $WIFI_FULL_ICON $WIFI_NAME
+    else
+        echo $VPN_ICON $VPN_NAME
     fi
 }
+
 
 get_wifi

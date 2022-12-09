@@ -6,7 +6,7 @@ PREFIX=' '
 
 get_time()
 {
-    echo "$(date '+%H:%M')"
+    echo "$(date '+%H:%M') "
 }
 
 get_time
