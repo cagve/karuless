@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# What modules, in what order
+MODULES="pomodoro mail date time" 
+
+# Delay between showing the status bar
+DELAY="0.05"
+
+# Where the custom modules are stored
+CUSTOM_DIR="$HOME/karuless/bar/modules/customs/"
+
+# Separator between modules
+SEPARATOR=" | "
+
+# Padding at the end and beggining of the status bar
+RIGHT_PADDING=" "
+LEFT_PADDING=" "

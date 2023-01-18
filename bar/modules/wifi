@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Gets the wifi status
+
+# WIFI_FULL_ICON=''
+# WIFI_MID_ICON=''
+# WIFI_LOW_ICON=''
+# NO_WIFI_ICON=''
+
+WIFI_FULL_ICON='(WIFI)'
+WIFI_MID_ICON='(WIFI)'
+WIFI_LOW_ICON='(WIFI)'
+NO_WIFI_ICON='(WIFI)'
+IP=$(hostname -I | awk '{print $1}')
+WIFI_NAME=$(iwgetid -r)
+
+get_wifi()
+{
+    if [ -z $WIFI_NAME ]
+    then
+        echo $WIFI_FULL_ICON "Not connected";
+    else 
+        echo $WIFI_FULL_ICON $WIFI_NAME
+    fi
+}
+
+get_wifi

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Prints number of unread mail
+# Requires mutt/neomutt
+
+MAIL_DIR="/home/caguiler/Mail/INBOX/new/"
+PREFIX='(MAIL)'
+NEWMAILS=$(find /home/caguiler/Mail/INBOX/new/ -type f | wc -l)
+
+get_mail()
+{
+	echo "$PREFIX $NEWMAILS"
+}
+
+get_mail

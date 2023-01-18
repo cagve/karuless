@@ -1,0 +1,9 @@
+#!/bin/bash
+STATUS=$(pomodoro status)
+
+if [[ $STATUS ]]; then
+	echo $STATUS
+else 
+	echo " "
+fi
+
