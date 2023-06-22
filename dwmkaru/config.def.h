@@ -58,29 +58,30 @@ static const Layout layouts[] = {
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* commands */
-static const char *upvol[]   = { "/usr/bin/pactl", "set-sink-volume", "0", "+5%",     NULL };
-static const char *downvol[] = { "/usr/bin/pactl", "set-sink-volume", "0", "-5%",     NULL };
-static const char *mutevol[] = { "/usr/bin/pactl", "set-sink-mute",   "0", "toggle",  NULL };
-static const char *setwallpaper[] = { "/home/karu/scripts/setwallpaper", NULL};
-static const char *nerdfontsicons[] = { "/home/karu/scripts/rofi-nerdfonts.sh", NULL};
-static const char *screenshot[] = { "/usr/bin/gnome-screenshot", NULL};
-static const char *screenshotarea[] = { "/usr/bin/gnome-screenshot","--area", NULL};
-static const char *bookmarks[] = { "/home/karu/scripts/rofibookmarks", NULL};
+static const char *upvol[]   = { "volume", "up",     NULL };
+static const char *downvol[] = { "volume", "down",     NULL };
+static const char *mutevol[] = { "volume", "mute",  NULL };
+static const char *setwallpaper[] = { "/home/caguiler/scripts/setwallpaper", NULL};
+static const char *nerdfontsicons[] = { "/home/caguiler/scripts/rofi-nerdfonts.sh", NULL};
+static const char *screenshot[] = { "/usr/bin/flameshot","gui", NULL};
+static const char *bookmarks[] = { "/home/caguiler/scripts/rofibookmarks", NULL};
+static const char *pdfs[] = { "/home/caguiler/scripts/rofipdfs", NULL};
+static const char *dict[] = { "/usr/bin/goldendict", NULL};
 
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-static const char *calendar[] = { "st", "-c", "floating", "-e", "calendar.sh", NULL };
-static const char *termcmd[]  = { "st", NULL };
+static const char *termcmd[]  = { "alacritty", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
-	{ MODKEY|ShiftMask,             XK_c,      spawn,          {.v = screenshotarea  } },
 	{ MODKEY,                       XK_c,      spawn,          {.v = screenshot  } },
+	{ MODKEY,                       XK_o,      spawn,          {.v = pdfs  } },
 	{ MODKEY,                       XK_n,      spawn,          {.v = nerdfontsicons  } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_w,      spawn,          {.v = setwallpaper } },
 	{ MODKEY,                       XK_Return, spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_b,      spawn,          {.v = bookmarks } },
+	{ MODKEY|ShiftMask,				XK_d,      spawn,          {.v = dict } },
 	{ MODKEY|ShiftMask,             XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
