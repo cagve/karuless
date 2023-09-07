@@ -32,10 +32,11 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class      instance    title       tags mask     isfloating   monitor */
-	{ "Gimp",     NULL,       NULL,       0,            1,           -1 },
-	{ "floating",     NULL,       NULL,       0,            1,           -1 },
-	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           -1 },
+	/* class      instance    title       tags mask     iscentered   isfloating   monitor */ 
+	{ "Gimp",     NULL,       NULL,       0,            0,           1,           -1 },
+	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           0,           -1 },
+	{ "floating", NULL,       NULL,       0,            1,           1,			  -1 },
+	{ "thunderbird", "Msgcompose",       NULL,       0,            1,           1,			  -1 },
 };
 
 /* layout(s) */
@@ -72,6 +73,8 @@ static const char *screenshot[] = { "/usr/bin/flameshot","gui", NULL};
 static const char *bookmarks[] = { "/home/caguiler/scripts/rofibookmarks", NULL};
 static const char *pdfs[] = { "/home/caguiler/scripts/rofipdfs", NULL};
 static const char *dict[] = { "/usr/bin/goldendict", NULL};
+static const char *notes[] = {"/home/caguiler/scripts/dwmnotes", NULL};
+static const char *diary[] = {"/home/caguiler/scripts/dwmdiary", NULL};
 
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
@@ -81,7 +84,9 @@ static const Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,                       XK_c,      spawn,          {.v = screenshot  } },
 	{ MODKEY,                       XK_o,      spawn,          {.v = pdfs  } },
-	{ MODKEY,                       XK_n,      spawn,          {.v = nerdfontsicons  } },
+	{ MODKEY,                       XK_u,      spawn,          {.v = nerdfontsicons  } },
+	{ MODKEY,						XK_n,      spawn,          {.v = diary  } },
+	{ MODKEY|ShiftMask,				XK_n,      spawn,          {.v = notes  } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_w,      spawn,          {.v = setwallpaper } },
 	{ MODKEY,                       XK_Return, spawn,          {.v = termcmd } },
