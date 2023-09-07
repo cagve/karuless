@@ -2,6 +2,8 @@
 #include <X11/XF86keysym.h>
 
 /* appearance */
+static const int startwithgaps[]    = { 0 };	/* 1 means gaps are used by default, this can be customized for each tag */
+static const unsigned int gappx[]   = { 10 };   /* default gap between windows in pixels, this can be customized for each tag */
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const unsigned int systraypinning = 0;   /* 0: sloppy systray follows selected monitor, >0: pin systray to monitor X */
@@ -82,6 +84,10 @@ static const char *termcmd[]  = { "alacritty", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
+	{ MODKEY,                       XK_minus,  setgaps,        {.i = -5 } },
+	{ MODKEY,                       XK_equal,  setgaps,        {.i = +5 } },
+	{ MODKEY|ShiftMask,             XK_minus,  setgaps,        {.i = GAP_RESET } },
+	{ MODKEY|ShiftMask,             XK_equal,  setgaps,        {.i = GAP_TOGGLE} },
 	{ MODKEY,                       XK_c,      spawn,          {.v = screenshot  } },
 	{ MODKEY,                       XK_o,      spawn,          {.v = pdfs  } },
 	{ MODKEY,                       XK_u,      spawn,          {.v = nerdfontsicons  } },

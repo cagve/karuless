@@ -56,6 +56,8 @@
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw)
 #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
 #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
+#define GAP_TOGGLE 100
+#define GAP_RESET  0
 
 #define SYSTEM_TRAY_REQUEST_DOCK    0
 /* XEMBED messages */
@@ -127,6 +129,7 @@ typedef struct {
 } Layout;
 
 typedef struct Pertag Pertag;
+
 struct Monitor {
 	char ltsymbol[16];
 	float mfact;
@@ -228,6 +231,7 @@ static void sendmon(Client *c, Monitor *m);
 static void setclientstate(Client *c, long state);
 static void setfocus(Client *c);
 static void setfullscreen(Client *c, int fullscreen);
+static void setgaps(const Arg *arg);
 static void fullscreen(const Arg *arg);
 static void setlayout(const Arg *arg);
 static void setmfact(const Arg *arg);
@@ -315,6 +319,8 @@ struct Pertag {
 	unsigned int sellts[LENGTH(tags) + 1]; /* selected layouts */
 	const Layout *ltidxs[LENGTH(tags) + 1][2]; /* matrix of tags and layouts indexes  */
 	int showbars[LENGTH(tags) + 1]; /* display bar for the current tag */
+	int drawwithgaps[LENGTH(tags) + 1]; /* gaps toggle for each tag */
+	int gappx[LENGTH(tags) + 1]; /* gaps for each tag */
 };
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
@@ -761,8 +767,13 @@ createmon(void)
 		m->pertag->sellts[i] = m->sellt;
 
 		m->pertag->showbars[i] = m->showbar;
+		if (i > 0) {
+			m->pertag->drawwithgaps[i] = startwithgaps[(i - 1) % LENGTH(gappx)];
+			m->pertag->gappx[i] = gappx[(i - 1) % LENGTH(gappx)];
+		}
 	}
-
+	m->pertag->drawwithgaps[0] = startwithgaps[0]; 
+	m->pertag->gappx[0] = gappx[0];
 	return m;
 }
 
@@ -933,6 +944,12 @@ focus(Client *c)
 		attachstack(c);
 		grabbuttons(c, 1);
 		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+		if (!selmon->pertag->drawwithgaps[selmon->pertag->curtag] && !c->isfloating) {
+			XWindowChanges wc;
+			wc.sibling = selmon->barwin;
+			wc.stack_mode = Below;
+			XConfigureWindow(dpy, c->win, CWSibling | CWStackMode, &wc);
+		}
 		setfocus(c);
 	} else {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -1273,7 +1290,10 @@ monocle(Monitor *m)
 	if (n > 0) /* override layout symbol */
 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
-		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+		if (selmon->pertag->drawwithgaps[selmon->pertag->curtag])
+			resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+		else
+			resize(c, m->wx - c->bw, m->wy, m->ww, m->wh, False);
 }
 
 void
@@ -1475,6 +1495,18 @@ resizeclient(Client *c, int x, int y, int w, int h)
 	c->oldw = c->w; c->w = wc.width = w;
 	c->oldh = c->h; c->h = wc.height = h;
 	wc.border_width = c->bw;
+	if (!selmon->pertag->drawwithgaps[selmon->pertag->curtag] && /* this is the noborderfloatingfix patch, slightly modified so that it will work if, and only if, gaps are disabled. */
+			(((nexttiled(c->mon->clients) == c && !nexttiled(c->next)) /* these two first lines are the only ones changed. if you are manually patching and have noborder installed already, just change these lines; or conversely, just remove this section if the noborder patch is not desired;) */
+			 || &monocle == c->mon->lt[c->mon->sellt]->arrange))
+		&& !c->isfullscreen && !c->isfloating
+			&& NULL != c->mon->lt[c->mon->sellt]->arrange) {
+				c->w = wc.width += c->bw * 2;
+				c->h = wc.height += c->bw * 2;
+				wc.border_width = 0;
+			}
+ 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
+ 	configure(c);
+ 	XSync(dpy, False);
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 	configure(c);
 	XSync(dpy, False);
@@ -1714,6 +1746,29 @@ setfullscreen(Client *c, int fullscreen)
 	}
 }
 
+void
+setgaps(const Arg *arg)
+{
+	switch(arg->i)
+	{
+		case GAP_TOGGLE:
+			selmon->pertag->drawwithgaps[selmon->pertag->curtag] = !selmon->pertag->drawwithgaps[selmon->pertag->curtag];
+			break;
+		case GAP_RESET:
+			if (selmon->pertag->curtag > 0)
+				selmon->pertag->gappx[selmon->pertag->curtag] = gappx[selmon->pertag->curtag - 1 % LENGTH(gappx)];
+			else
+				selmon->pertag->gappx[0] = gappx[0];
+			break;
+		default:
+			if (selmon->pertag->gappx[selmon->pertag->curtag] + arg->i < 0)
+				selmon->pertag->gappx[selmon->pertag->curtag] = 0;
+			else
+				selmon->pertag->gappx[selmon->pertag->curtag] += arg->i;
+	}
+	arrange(selmon);
+}
+
 Layout *last_layout;
 void
 fullscreen(const Arg *arg)
@@ -1914,25 +1969,45 @@ tile(Monitor *m)
 	if (n == 0)
 		return;
 
-	if (n > m->nmaster)
-		mw = m->nmaster ? m->ww * m->mfact : 0;
-	else
-		mw = m->ww;
-	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
-		if (i < m->nmaster) {
-			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
-			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
-			if (my + HEIGHT(c) < m->wh)
-				my += HEIGHT(c);
-		} else {
-			h = (m->wh - ty) / (n - i);
-			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
-			if (ty + HEIGHT(c) < m->wh)
-				ty += HEIGHT(c);
-		}
+	if (m->pertag->drawwithgaps[m->pertag->curtag]) { /* draw with fullgaps logic */
+		if (n > m->nmaster)
+			mw = m->nmaster ? m->ww * m->mfact : 0;
+		else
+			mw = m->ww - m->pertag->gappx[m->pertag->curtag];
+		for (i = 0, my = ty = m->pertag->gappx[m->pertag->curtag], c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+			if (i < m->nmaster) {
+				h = (m->wh - my) / (MIN(n, m->nmaster) - i) - m->pertag->gappx[m->pertag->curtag];
+				resize(c, m->wx + m->pertag->gappx[m->pertag->curtag], m->wy + my, mw - (2*c->bw) - m->pertag->gappx[m->pertag->curtag], h - (2*c->bw), 0);
+				if (my + HEIGHT(c) + m->pertag->gappx[m->pertag->curtag] < m->wh)
+					my += HEIGHT(c) + m->pertag->gappx[m->pertag->curtag];
+			} else {
+				h = (m->wh - ty) / (n - i) - m->pertag->gappx[m->pertag->curtag];
+				resize(c, m->wx + mw + m->pertag->gappx[m->pertag->curtag], m->wy + ty, m->ww - mw - (2*c->bw) - 2*m->pertag->gappx[m->pertag->curtag], h - (2*c->bw), 0);
+				if (ty + HEIGHT(c) + m->pertag->gappx[m->pertag->curtag] < m->wh)
+					ty += HEIGHT(c) + m->pertag->gappx[m->pertag->curtag];
+			}
+	} else { /* draw with singularborders logic */
+		if (n > m->nmaster)
+			mw = m->nmaster ? m->ww * m->mfact : 0;
+		else
+			mw = m->ww;
+		for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+			if (i < m->nmaster) {
+				h = (m->wh - my) / (MIN(n, m->nmaster) - i);
+				if (n == 1)
+					resize(c, m->wx - c->bw, m->wy, m->ww, m->wh, False);
+				else
+					resize(c, m->wx - c->bw, m->wy + my, mw - c->bw, h - c->bw, False);
+				my += HEIGHT(c) - c->bw;
+			} else {
+				h = (m->wh - ty) / (n - i);
+				resize(c, m->wx + mw - c->bw, m->wy + ty, m->ww - mw, h - c->bw, False);
+				ty += HEIGHT(c) - c->bw;
+			}
+	}
 }
 
-void
+	void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = selmon->pertag->showbars[selmon->pertag->curtag] = !selmon->showbar;
@@ -1952,7 +2027,7 @@ togglebar(const Arg *arg)
 	arrange(selmon);
 }
 
-void
+	void
 togglefloating(const Arg *arg)
 {
 	if (!selmon->sel)
@@ -1962,15 +2037,15 @@ togglefloating(const Arg *arg)
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
 	if (selmon->sel->isfloating)
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
-			selmon->sel->w, selmon->sel->h, 0);
+				selmon->sel->w, selmon->sel->h, 0);
 
-    selmon->sel->x = selmon->sel->mon->mx + (selmon->sel->mon->mw - WIDTH(selmon->sel)) / 2;
-    selmon->sel->y = selmon->sel->mon->my + (selmon->sel->mon->mh - HEIGHT(selmon->sel)) / 2;
+	selmon->sel->x = selmon->sel->mon->mx + (selmon->sel->mon->mw - WIDTH(selmon->sel)) / 2;
+	selmon->sel->y = selmon->sel->mon->my + (selmon->sel->mon->mh - HEIGHT(selmon->sel)) / 2;
 
 	arrange(selmon);
 }
 
-void
+	void
 toggletag(const Arg *arg)
 {
 	unsigned int newtags;
@@ -1985,7 +2060,7 @@ toggletag(const Arg *arg)
 	}
 }
 
-void
+	void
 toggleview(const Arg *arg)
 {
 	unsigned int newtagset = selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK);
@@ -2021,7 +2096,7 @@ toggleview(const Arg *arg)
 	}
 }
 
-void
+	void
 unfocus(Client *c, int setfocus)
 {
 	if (!c)
@@ -2034,7 +2109,7 @@ unfocus(Client *c, int setfocus)
 	}
 }
 
-void
+	void
 unmanage(Client *c, int destroyed)
 {
 	Monitor *m = c->mon;
@@ -2060,7 +2135,7 @@ unmanage(Client *c, int destroyed)
 	arrange(m);
 }
 
-void
+	void
 unmapnotify(XEvent *e)
 {
 	Client *c;
@@ -2080,7 +2155,7 @@ unmapnotify(XEvent *e)
 	}
 }
 
-void
+	void
 updatebars(void)
 {
 	unsigned int w;
@@ -2108,7 +2183,7 @@ updatebars(void)
 	}
 }
 
-void
+	void
 updatebarpos(Monitor *m)
 {
 	m->wy = m->my;
@@ -2121,7 +2196,7 @@ updatebarpos(Monitor *m)
 		m->by = -bh;
 }
 
-void
+	void
 updateclientlist()
 {
 	Client *c;
@@ -2131,11 +2206,11 @@ updateclientlist()
 	for (m = mons; m; m = m->next)
 		for (c = m->clients; c; c = c->next)
 			XChangeProperty(dpy, root, netatom[NetClientList],
-				XA_WINDOW, 32, PropModeAppend,
-				(unsigned char *) &(c->win), 1);
+					XA_WINDOW, 32, PropModeAppend,
+					(unsigned char *) &(c->win), 1);
 }
 
-int
+	int
 updategeom(void)
 {
 	int dirty = 0;
@@ -2167,8 +2242,8 @@ updategeom(void)
 		}
 		for (i = 0, m = mons; i < nn && m; m = m->next, i++)
 			if (i >= n
-			|| unique[i].x_org != m->mx || unique[i].y_org != m->my
-			|| unique[i].width != m->mw || unique[i].height != m->mh)
+					|| unique[i].x_org != m->mx || unique[i].y_org != m->my
+					|| unique[i].width != m->mw || unique[i].height != m->mh)
 			{
 				dirty = 1;
 				m->num = i;
@@ -2213,7 +2288,7 @@ updategeom(void)
 	return dirty;
 }
 
-void
+	void
 updatenumlockmask(void)
 {
 	unsigned int i, j;
@@ -2224,12 +2299,12 @@ updatenumlockmask(void)
 	for (i = 0; i < 8; i++)
 		for (j = 0; j < modmap->max_keypermod; j++)
 			if (modmap->modifiermap[i * modmap->max_keypermod + j]
-				== XKeysymToKeycode(dpy, XK_Num_Lock))
+					== XKeysymToKeycode(dpy, XK_Num_Lock))
 				numlockmask = (1 << i);
 	XFreeModifiermap(modmap);
 }
 
-void
+	void
 updatesizehints(Client *c)
 {
 	long msize;
@@ -2273,7 +2348,7 @@ updatesizehints(Client *c)
 	c->hintsvalid = 1;
 }
 
-void
+	void
 updatestatus(void)
 {
 	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
@@ -2283,7 +2358,7 @@ updatestatus(void)
 }
 
 
-void
+	void
 updatesystrayicongeom(Client *i, int w, int h)
 {
 	if (i) {
@@ -2306,7 +2381,7 @@ updatesystrayicongeom(Client *i, int w, int h)
 	}
 }
 
-void
+	void
 updatesystrayiconstate(Client *i, XPropertyEvent *ev)
 {
 	long flags;
@@ -2334,7 +2409,7 @@ updatesystrayiconstate(Client *i, XPropertyEvent *ev)
 			systray->win, XEMBED_EMBEDDED_VERSION);
 }
 
-void
+	void
 updatesystray(void)
 {
 	XSetWindowAttributes wa;
@@ -2400,7 +2475,7 @@ updatesystray(void)
 	XSync(dpy, False);
 }
 
-void
+	void
 updatetitle(Client *c)
 {
 	if (!gettextprop(c->win, netatom[NetWMName], c->name, sizeof c->name))
@@ -2409,7 +2484,7 @@ updatetitle(Client *c)
 		strcpy(c->name, broken);
 }
 
-void
+	void
 updatewindowtype(Client *c)
 {
 	Atom state = getatomprop(c, netatom[NetWMState]);
@@ -2423,7 +2498,7 @@ updatewindowtype(Client *c)
 	}
 }
 
-void
+	void
 updatewmhints(Client *c)
 {
 	XWMHints *wmh;
@@ -2442,7 +2517,7 @@ updatewmhints(Client *c)
 	}
 }
 
-void
+	void
 view(const Arg *arg)
 {
 	int i;
@@ -2480,7 +2555,7 @@ view(const Arg *arg)
 	arrange(selmon);
 }
 
-Client *
+	Client *
 wintoclient(Window w)
 {
 	Client *c;
@@ -2503,7 +2578,7 @@ wintosystrayicon(Window w) {
 	return i;
 }
 
-Monitor *
+	Monitor *
 wintomon(Window w)
 {
 	int x, y;
@@ -2523,25 +2598,25 @@ wintomon(Window w)
 /* There's no way to check accesses to destroyed windows, thus those cases are
  * ignored (especially on UnmapNotify's). Other types of errors call Xlibs
  * default error handler, which may call exit. */
-int
+	int
 xerror(Display *dpy, XErrorEvent *ee)
 {
 	if (ee->error_code == BadWindow
-	|| (ee->request_code == X_SetInputFocus && ee->error_code == BadMatch)
-	|| (ee->request_code == X_PolyText8 && ee->error_code == BadDrawable)
-	|| (ee->request_code == X_PolyFillRectangle && ee->error_code == BadDrawable)
-	|| (ee->request_code == X_PolySegment && ee->error_code == BadDrawable)
-	|| (ee->request_code == X_ConfigureWindow && ee->error_code == BadMatch)
-	|| (ee->request_code == X_GrabButton && ee->error_code == BadAccess)
-	|| (ee->request_code == X_GrabKey && ee->error_code == BadAccess)
-	|| (ee->request_code == X_CopyArea && ee->error_code == BadDrawable))
+			|| (ee->request_code == X_SetInputFocus && ee->error_code == BadMatch)
+			|| (ee->request_code == X_PolyText8 && ee->error_code == BadDrawable)
+			|| (ee->request_code == X_PolyFillRectangle && ee->error_code == BadDrawable)
+			|| (ee->request_code == X_PolySegment && ee->error_code == BadDrawable)
+			|| (ee->request_code == X_ConfigureWindow && ee->error_code == BadMatch)
+			|| (ee->request_code == X_GrabButton && ee->error_code == BadAccess)
+			|| (ee->request_code == X_GrabKey && ee->error_code == BadAccess)
+			|| (ee->request_code == X_CopyArea && ee->error_code == BadDrawable))
 		return 0;
 	fprintf(stderr, "dwm: fatal error: request code=%d, error code=%d\n",
-		ee->request_code, ee->error_code);
+			ee->request_code, ee->error_code);
 	return xerrorxlib(dpy, ee); /* may call exit */
 }
 
-int
+	int
 xerrordummy(Display *dpy, XErrorEvent *ee)
 {
 	return 0;
@@ -2549,7 +2624,7 @@ xerrordummy(Display *dpy, XErrorEvent *ee)
 
 /* Startup Error handler to check if another window manager
  * is already running. */
-int
+	int
 xerrorstart(Display *dpy, XErrorEvent *ee)
 {
 	die("dwm: another window manager is already running");
@@ -2572,7 +2647,7 @@ systraytomon(Monitor *m) {
 	return t;
 }
 
-void
+	void
 zoom(const Arg *arg)
 {
 	Client *c = selmon->sel;
@@ -2584,7 +2659,7 @@ zoom(const Arg *arg)
 	pop(c);
 }
 
-int
+	int
 main(int argc, char *argv[])
 {
 	if (argc == 2 && !strcmp("-v", argv[1]))
