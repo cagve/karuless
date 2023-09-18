@@ -35,6 +35,7 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class      instance    title       tags mask     iscentered   isfloating   monitor */ 
+	{ "korganizer",     "korganizer",       NULL,       0,            1,           1,           -1 },
 	{ "Gimp",     NULL,       NULL,       0,            0,           1,           -1 },
 	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           0,           -1 },
 	{ "floating", NULL,       NULL,       0,            1,           1,			  -1 },
@@ -77,6 +78,7 @@ static const char *pdfs[] = { "/home/caguiler/scripts/rofipdfs", NULL};
 static const char *dict[] = { "/usr/bin/goldendict", NULL};
 static const char *notes[] = {"/home/caguiler/scripts/dwmnotes", NULL};
 static const char *diary[] = {"/home/caguiler/scripts/dwmdiary", NULL};
+static const char *calendar[] = {"korgnaizer", NULL};
 
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
@@ -93,6 +95,7 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_u,      spawn,          {.v = nerdfontsicons  } },
 	{ MODKEY,						XK_n,      spawn,          {.v = diary  } },
 	{ MODKEY|ShiftMask,				XK_n,      spawn,          {.v = notes  } },
+	{ MODKEY|ShiftMask,				XK_k,      spawn,          {.v = calendar  } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_w,      spawn,          {.v = setwallpaper } },
 	{ MODKEY,                       XK_Return, spawn,          {.v = termcmd } },
