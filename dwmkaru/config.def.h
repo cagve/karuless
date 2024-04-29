@@ -75,14 +75,12 @@ static const char *downvol[] = { "volume", "down",     NULL };
 static const char *mutevol[] = { "volume", "mute",  NULL };
 static const char *setwallpaper[] = { "/home/caguiler/scripts/setwallpaper", NULL};
 static const char *plumb[] = { "/home/caguiler/scripts/plumb", NULL};
-static const char *nerdfontsicons[] = { "/home/caguiler/scripts/rofi-math", NULL};
 static const char *screenshot[] = { "/usr/bin/flameshot","gui", NULL};
 static const char *pdfs[] = { "/home/caguiler/scripts/rofipdfs", NULL};
 static const char *dict[] = { "/usr/bin/goldendict", NULL};
 static const char *notes[] = {"xpad", "-t", NULL};
-static const char *diary[] = {"/home/caguiler/scripts/dwmdiary", NULL};
 static const char *calendar[] = {"korgnaizer", NULL};
-// static const char scratchpadname[] = "scratchpad";
+static const char scratchpadname[] = "scratchpad";
 // static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
 
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
