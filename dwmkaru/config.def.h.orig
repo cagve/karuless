@@ -39,9 +39,7 @@ static const Rule rules[] = {
 	{ "Gimp",     NULL,       NULL,       0,            0,           1,           -1 },
 	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           0,           -1 },
 	{ "floating", NULL,       NULL,       0,            1,           1,			  -1 },
-	{ "knotes", NULL,       NULL,       0,            1,           1,			  -1 },
 	{ "Xmessage", NULL,       NULL,       0,            1,           1,			  -1 },
-	{ "xpad", "xpad",       NULL,       0,            1,           1,			  -1 },
 	{ "thunderbird", "Msgcompose",       NULL,       0,            1,           1,			  -1 },
 };
 
@@ -74,17 +72,14 @@ static const char *upvol[]   = { "volume", "up",     NULL };
 static const char *downvol[] = { "volume", "down",     NULL };
 static const char *mutevol[] = { "volume", "mute",  NULL };
 static const char *setwallpaper[] = { "/home/caguiler/scripts/setwallpaper", NULL};
-static const char *plumb[] = { "/home/caguiler/scripts/plumb", NULL};
 static const char *nerdfontsicons[] = { "/home/caguiler/scripts/rofi-math", NULL};
 static const char *screenshot[] = { "/usr/bin/flameshot","gui", NULL};
 static const char *bookmarks[] = { "/home/caguiler/scripts/rofibookmarks", NULL};
 static const char *pdfs[] = { "/home/caguiler/scripts/rofipdfs", NULL};
 static const char *dict[] = { "/usr/bin/goldendict", NULL};
-static const char *notes[] = {"xpad", "-t", NULL};
+static const char *notes[] = {"/home/caguiler/scripts/dwmnotes", NULL};
 static const char *diary[] = {"/home/caguiler/scripts/dwmdiary", NULL};
 static const char *calendar[] = {"korgnaizer", NULL};
-static const char scratchpadname[] = "scratchpad";
-static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
 
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
@@ -99,13 +94,12 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_c,      spawn,          {.v = screenshot  } },
 	{ MODKEY,                       XK_o,      spawn,          {.v = pdfs  } },
 	{ MODKEY,                       XK_u,      spawn,          {.v = nerdfontsicons  } },
-	{ MODKEY,						XK_n,      spawn,          {.v = notes  } },
+	{ MODKEY,						XK_n,      spawn,          {.v = diary  } },
+	{ MODKEY|ShiftMask,				XK_n,      spawn,          {.v = notes  } },
 	{ MODKEY|ShiftMask,				XK_k,      spawn,          {.v = calendar  } },
-	{ MODKEY|ShiftMask,				XK_p,      spawn,          {.v = plumb } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_w,      spawn,          {.v = setwallpaper } },
 	{ MODKEY,                       XK_Return, spawn,          {.v = termcmd } },
-	{ MODKEY,                       XK_grave,  togglescratch,  {.v = scratchpadcmd } },
 	{ MODKEY,                       XK_b,      spawn,          {.v = bookmarks } },
 	{ MODKEY|ShiftMask,				XK_d,      spawn,          {.v = dict } },
 	{ MODKEY|ShiftMask,             XK_b,      togglebar,      {0} },
@@ -130,9 +124,6 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
-	{ MODKEY|ControlMask,           XK_j, spawn, {.v = downvol } },
-	{ MODKEY|ControlMask,           XK_l, spawn, {.v = mutevol } },
-	{ MODKEY|ControlMask,           XK_k, spawn, {.v = upvol   } },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
@@ -143,9 +134,9 @@ static const Key keys[] = {
 	TAGKEYS(                        XK_8,                      7)
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_e,      quit,           {0} },
-	// { 0,                       XF86XK_AudioLowerVolume, spawn, {.v = downvol } },
-	// { 0,                       XF86XK_AudioMute, spawn, {.v = mutevol } },
-	// { 0,                       XF86XK_AudioRaiseVolume, spawn, {.v = upvol   } }
+	{ 0,                       XF86XK_AudioLowerVolume, spawn, {.v = downvol } },
+	{ 0,                       XF86XK_AudioMute, spawn, {.v = mutevol } },
+	{ 0,                       XF86XK_AudioRaiseVolume, spawn, {.v = upvol   } }
 };
 
 /* button definitions */
@@ -157,7 +148,7 @@ static const Button buttons[] = {
 	{ ClkWinTitle,          0,              Button2,        zoom,           {0} },
 	{ ClkStatusText,        0,              Button2,        spawn,          {.v = termcmd } },
 	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      {0} },
-	{ ClkClientWin,         MODKEY,         Button2,        spawn,			{.v = plumb} },
+	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, {0} },
 	{ ClkClientWin,         MODKEY,         Button3,        resizemouse,    {0} },
 	{ ClkTagBar,            0,              Button1,        view,           {0} },
 	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
