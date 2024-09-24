@@ -79,7 +79,6 @@ static const char *screenshot[] = { "/usr/bin/flameshot","gui", NULL};
 static const char *pdfs[] = { "/home/caguiler/scripts/rofipdfs", NULL};
 static const char *dict[] = { "/usr/bin/goldendict", NULL};
 static const char *notes[] = {"xpad", "-t", NULL};
-static const char *calendar[] = {"korgnaizer", NULL};
 static const char scratchpadname[] = "scratchpad";
 // static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
 
@@ -96,7 +95,6 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_c,      spawn,          {.v = screenshot  } },
 	{ MODKEY,                       XK_o,      spawn,          {.v = pdfs  } }, 
 	{ MODKEY,						XK_n,      spawn,          {.v = notes  } },
-	{ MODKEY|ShiftMask,				XK_k,      spawn,          {.v = calendar  } },
 	{ MODKEY|ShiftMask,				XK_p,      spawn,          {.v = plumb } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_w,      spawn,          {.v = setwallpaper } },
@@ -125,9 +123,9 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
-	{ MODKEY|ControlMask,           XK_j, spawn, {.v = downvol } },
-	{ MODKEY|ControlMask,           XK_l, spawn, {.v = mutevol } },
-	{ MODKEY|ControlMask,           XK_k, spawn, {.v = upvol   } },
+	// { MODKEY|ControlMask,           XK_j, spawn, {.v = downvol } },
+	// { MODKEY|ControlMask,           XK_l, spawn, {.v = mutevol } },
+	// { MODKEY|ControlMask,           XK_k, spawn, {.v = upvol   } },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
@@ -138,9 +136,9 @@ static const Key keys[] = {
 	TAGKEYS(                        XK_8,                      7)
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_e,      quit,           {0} },
-	// { 0,                       XF86XK_AudioLowerVolume, spawn, {.v = downvol } },
-	// { 0,                       XF86XK_AudioMute, spawn, {.v = mutevol } },
-	// { 0,                       XF86XK_AudioRaiseVolume, spawn, {.v = upvol   } }
+	{ 0,                       XF86XK_AudioLowerVolume, spawn, {.v = downvol } },
+	{ 0,                       XF86XK_AudioMute, spawn, {.v = mutevol } },
+	{ 0,                       XF86XK_AudioRaiseVolume, spawn, {.v = upvol   } }
 };
 
 /* button definitions */
